@@ -80,7 +80,7 @@ func (kc *Client) Authenticate(loginDetails *creds.LoginDetails) (string, error)
 
 	referingURL := passwordURL
 
-	responseDoc, err := kc.loadChallengePage(passwordURL+"?hl=en&loc=US", referingURL, passwordForm, loginDetails)
+	responseDoc, err := kc.loadChallengePage(passwordURL+"?hl=en&loc=US", referingURL, passwordForm, loginDetails, true)
 	if err != nil {
 		return "", errors.Wrap(err, "error loading challenge page")
 	}
@@ -137,7 +137,7 @@ func (kc *Client) Authenticate(loginDetails *creds.LoginDetails) (string, error)
 		}
 		captchaForm.Set(captchaInputId, captcha)
 
-		responseDoc, err = kc.loadChallengePage(captchaURL+"?hl=en&loc=US", captchaURL, captchaForm, loginDetails)
+		responseDoc, err = kc.loadChallengePage(captchaURL+"?hl=en&loc=US", captchaURL, captchaForm, loginDetails, true)
 		if err != nil {
 			return "", errors.Wrap(err, "error loading challenge page")
 		}
@@ -155,7 +155,7 @@ func (kc *Client) Authenticate(loginDetails *creds.LoginDetails) (string, error)
 
 		loginForm.Set("Passwd", loginDetails.Password)
 
-		responseDoc, err = kc.loadChallengePage(loginURL+"?hl=en&loc=US", loginURL, loginForm, loginDetails)
+		responseDoc, err = kc.loadChallengePage(loginURL+"?hl=en&loc=US", loginURL, loginForm, loginDetails, true)
 		if err != nil {
 			return "", errors.Wrap(err, "error loading challenge page")
 		}
@@ -286,8 +286,7 @@ func (kc *Client) loadLoginPage(submitURL string, referer string, authForm url.V
 	return loginURL, loginForm, err
 }
 
-func (kc *Client) loadChallengePage(submitURL string, referer string, authForm url.Values, loginDetails *creds.LoginDetails) (*goquery.Document, error) {
-
+func (kc *Client) loadChallengePage(submitURL string, referer string, authForm url.Values, loginDetails *creds.LoginDetails, totp ...bool) (*goquery.Document, error) {
 	authForm.Set("bgresponse", "js_enabled")
 
 	req, err := http.NewRequest("POST", submitURL, strings.NewReader(authForm.Encode()))
@@ -326,6 +325,10 @@ func (kc *Client) loadChallengePage(submitURL string, referer string, authForm u
 	secondFactorHeader3 := "2-Step Verification"
 	secondFactorHeaderJp := "2 段階認証プロセス"
 
+	if extractNodeText(doc, "span", "Choose how you want to sign in:") != "" {
+		return kc.loadChallengeEntryPage(doc, submitURL, loginDetails)
+	}
+
 	// have we been asked for 2-Step Verification
 	if extractNodeText(doc, "h2", secondFactorHeader) != "" ||
 		extractNodeText(doc, "h2", secondFactorHeader2) != "" ||
@@ -338,6 +341,31 @@ func (kc *Client) loadChallengePage(submitURL string, referer string, authForm u
 		}
 
 		logger.Debugf("secondActionURL: %s", secondActionURL)
+
+		if len(totp) > 0 && totp[0] {
+			switch {
+			case strings.Contains(secondActionURL, "challenge/totp"): // handle TOTP challenge
+
+				var token = loginDetails.MFAToken
+				if token == "" {
+					token = prompter.RequestSecurityCode("000000")
+				}
+
+				responseForm.Set("Pin", token)
+				responseForm.Set("TrustDevice", "on") // Don't ask again on this computer
+
+				return kc.loadResponsePage(secondActionURL, submitURL, responseForm)
+			}
+			if extractNodeText(doc, "h2", "To sign in to your Google Account, choose a task from the list below.") != "" {
+				return kc.loadChallengeEntryPage(doc, submitURL, loginDetails)
+			}
+			responseForm.Set("action", "2")
+			doc, err = kc.loadResponsePage(secondActionURL, submitURL, responseForm)
+			if err == nil {
+				doc.Url, err = url.Parse(loginDetails.URL)
+				return kc.loadChallengeEntryPage(doc, submitURL, loginDetails)
+			}
+		}
 
 		switch {
 		case strings.Contains(secondActionURL, "challenge/totp"): // handle TOTP challenge
@@ -506,6 +534,50 @@ func (kc *Client) loadAlternateChallengePage(submitURL string, referer string, a
 }
 
 func (kc *Client) loadChallengeEntryPage(doc *goquery.Document, submitURL string, loginDetails *creds.LoginDetails) (*goquery.Document, error) {
+	var challengeId string
+
+	doc.Find("form div[data-action='selectchallenge']").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		challengeType, ok := s.Attr("data-challengetype")
+		if !ok {
+			return true
+		}
+		if challengeType != "6" {
+			return true
+		}
+		cId, ok := s.Attr("data-challengeid")
+		if !ok {
+			return true
+		}
+		challengeId = cId
+		return false
+	})
+
+	if challengeId == "" {
+		doc.Find("form div[data-action='selectchallenge']").EachWithBreak(func(i int, s *goquery.Selection) bool {
+			_, ok := s.Attr("data-challengetype")
+			if !ok {
+				return true
+			}
+			cId, ok := s.Attr("data-challengeid")
+			if !ok {
+				return true
+			}
+			challengeId = cId
+			return false
+		})
+	}
+
+	if challengeId != "" {
+		var err error
+		doc.Url, err = url.Parse(loginDetails.URL)
+		responseForm, newActionURL, err := extractInputsByFormQuery(doc, "")
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to extract challenge form")
+		}
+		responseForm.Set("challenge", fmt.Sprintf("%s", challengeId))
+		return kc.loadChallengePage(newActionURL, submitURL, responseForm, loginDetails)
+	}
+
 	var challengeEntry string
 
 	doc.Find("form[data-challengeentry]").EachWithBreak(func(i int, s *goquery.Selection) bool {
@@ -514,15 +586,16 @@ func (kc *Client) loadChallengeEntryPage(doc *goquery.Document, submitURL string
 			return true
 		}
 
-		if strings.Contains(action, "challenge/totp/") ||
-			strings.Contains(action, "challenge/ipp/") ||
-			strings.Contains(action, "challenge/az/") ||
-			strings.Contains(action, "challenge/skotp/") {
-
+		if strings.Contains(action, "challenge/totp/") {
 			challengeEntry, _ = s.Attr("data-challengeentry")
 			return false
 		}
-
+		if strings.Contains(action, "challenge/ipp/") ||
+			strings.Contains(action, "challenge/az/") ||
+			strings.Contains(action, "challenge/skotp/") {
+			challengeEntry, _ = s.Attr("data-challengeentry")
+			return false
+		}
 		return true
 	})
 
@@ -613,7 +686,15 @@ func mustFindErrorMsg(doc *goquery.Document) string {
 }
 
 func extractInputsByFormID(doc *goquery.Document, formID ...string) (url.Values, string, error) {
-	// First try to find form by specific id
+	// Use TOTP first
+	for _, id := range formID {
+		formData, actionURL, err := extractInputsByFormQuery(doc, fmt.Sprintf("#%s", id))
+		if err == nil && strings.Contains(actionURL, "challenge/totp") {
+			return formData, actionURL, nil
+		}
+	}
+
+	// Fallback: try to find form by specific id
 	for _, id := range formID {
 		formData, actionURL, err := extractInputsByFormQuery(doc, fmt.Sprintf("#%s", id))
 		if err == nil && actionURL != "" {
