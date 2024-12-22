@@ -10,4 +10,5 @@ import (
 
 func init() {
 	credentials.CurrentHelper = &osxkeychain.Osxkeychain{}
+	credentials.CurrentHelperName = "macOS Keychain"
 }

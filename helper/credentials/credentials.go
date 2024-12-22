@@ -6,7 +6,8 @@ import (
 
 var (
 	// CurrentHelper the currently configured credentials helper
-	CurrentHelper Helper = &defaultHelper{}
+	CurrentHelper     Helper = &defaultHelper{}
+	CurrentHelperName string = "default"
 
 	// ErrCredentialsNotFound returned when the credential can't be located in the native store.
 	ErrCredentialsNotFound = errors.New("credentials not found in native keychain")

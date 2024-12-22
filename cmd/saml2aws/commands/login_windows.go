@@ -7,4 +7,5 @@ import (
 
 func init() {
 	credentials.CurrentHelper = &wincred.Wincred{}
+	credentials.CurrentHelperName = "Windows Credential Manager"
 }

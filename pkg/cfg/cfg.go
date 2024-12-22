@@ -7,6 +7,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 	"github.com/versent/saml2aws/v2/pkg/prompter"
+	"github.com/versent/saml2aws/v2/pkg/shell/colorize"
 	ini "gopkg.in/ini.v1"
 )
 
@@ -75,34 +76,30 @@ func (ia IDPAccount) String() string {
 	var appID string
 	var policyID string
 	var oktaCfg string
+	const nl = "\n  "
 	switch ia.Provider {
 	case "OneLogin":
-		appID = fmt.Sprintf(`
-  AppID: %s
-  Subdomain: %s`, ia.AppID, ia.Subdomain)
+		appID = nl + colorize.Label("AppID", ia.AppID) + nl + colorize.Label("Subdomain", ia.Subdomain)
 	case "F5APM":
-		policyID = fmt.Sprintf("\n  ResourceID: %s", ia.ResourceID)
+		policyID = nl + colorize.Label("ResourceID", ia.ResourceID)
 	case "AzureAD":
-		appID = fmt.Sprintf(`
-  AppID: %s`, ia.AppID)
+		appID = nl + colorize.Label("AppID", ia.AppID)
 	case "Okta":
-		oktaCfg = fmt.Sprintf(`
-  DisableSessions: %v
-  DisableRememberDevice: %v`, ia.DisableSessions, ia.DisableSessions)
+		oktaCfg = nl + colorize.Label("DisableSessions", "%v", ia.DisableSessions) + nl + colorize.Label("DisableRememberDevice", "%v", ia.DisableRememberDevice)
 	}
 
-	return fmt.Sprintf(`account {%s%s%s
-  URL: %s
-  Username: %s
-  Provider: %s
-  MFA: %s
-  SkipVerify: %v
-  AmazonWebservicesURN: %s
-  SessionDuration: %d
-  Profile: %s
-  RoleARN: %s
-  Region: %s
-}`, appID, policyID, oktaCfg, ia.URL, ia.Username, ia.Provider, ia.MFA, ia.SkipVerify, ia.AmazonWebservicesURN, ia.SessionDuration, ia.Profile, ia.RoleARN, ia.Region)
+	return fmt.Sprintf("account {%s%s%s", appID, policyID, oktaCfg) +
+		nl + colorize.Label("URL", ia.URL) +
+		nl + colorize.Label("Username", ia.Username) +
+		nl + colorize.Label("Provider", ia.Provider) +
+		nl + colorize.Label("MFA", ia.MFA) +
+		nl + colorize.Label("SkipVerify", "%v", ia.SkipVerify) +
+		nl + colorize.Label("AmazonWebservicesURN", ia.AmazonWebservicesURN) +
+		nl + colorize.Label("SessionDuration", "%d", ia.SessionDuration) +
+		nl + colorize.Label("Profile", ia.Profile) +
+		nl + colorize.Label("RoleARN", ia.RoleARN) +
+		nl + colorize.Label("Region", ia.Region) +
+		"}"
 }
 
 // Validate validate the required / expected fields are set

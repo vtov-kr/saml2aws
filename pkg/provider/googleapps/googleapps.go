@@ -652,7 +652,6 @@ func (kc *Client) loadChallengeEntryPage(doc *goquery.Document, submitURL string
 				preferredSelection = s
 			}
 		}
-
 		return true
 	})
 
@@ -751,7 +750,6 @@ func mustFindErrorMsg(doc *goquery.Document) string {
 }
 
 func extractInputsByFormID(doc *goquery.Document, formID ...string) (url.Values, string, error) {
-	// First try to find form by specific id
 	for _, id := range formID {
 		formData, actionURL, err := extractInputsByFormQuery(doc, fmt.Sprintf("#%s", id))
 		if err == nil && actionURL != "" {

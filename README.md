@@ -1,3 +1,40 @@
+# saml2aws for Users Who Prefer Google OTP
+
+## What's New?
+
+* During the login process, Google OTP is prioritized as the primary option for GoogleApps MFA.
+* If default values are already stored in the keychain or the configuration file, the login process will automatically proceed without requiring you to press Enter at prompts.
+* You can pass the OTP verification code using the following command:
+
+```shell
+$ saml2aws login --force --mfa-token="$(run command fetches your Google OTP)"
+```
+
+### **Example with 1Password**
+
+If you are using 1Password and have an item named `Google` stored in your vault, you can easily login with the following command:
+
+```shell
+$ saml2aws login --force --mfa-token="$(op item get Google --otp)"
+```
+
+For macOS:
+
+> The following conditions must be met:
+> 1. Install the `op` CLI app:
+>   ```bash
+>   brew install 1password-cli
+>   ```
+> 2. Install 1Password version 8 or later [Download here](https://support.1password.com/get-the-apps).
+> 3. Enable CLI integration in the Developer settings of the 1Password app.
+
+You can configure the 1Password app to unlock using biometrics, such as fingerprint authentication.  
+Once enabled, `op` CLI will also prompt for biometric authentication.
+
+---
+
+> Below is the original README.md from the repository.
+
 # saml2aws
 
 [![GitHub Actions status](https://github.com/Versent/saml2aws/workflows/Go/badge.svg?branch=master)](https://github.com/Versent/saml2aws/actions?query=workflow%3AGo) [![Build status - Windows](https://ci.appveyor.com/api/projects/status/ptpi18kci16o4i82/branch/master?svg=true)](https://ci.appveyor.com/project/davidobrien1985/saml2aws/branch/master)

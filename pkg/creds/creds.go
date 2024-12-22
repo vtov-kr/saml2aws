@@ -14,4 +14,5 @@ type LoginDetails struct {
 	StateToken        string   // used by Okta
 	OktaSessionCookie string   // used by Okta
 	GoogleChallenges  []string // used by GoogleApps
+	AutoFill          bool
 }

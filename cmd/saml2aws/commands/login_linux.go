@@ -15,5 +15,6 @@ func init() {
 
 	if keyringHelper, err := linuxkeyring.NewKeyringHelper(c); err == nil {
 		credentials.CurrentHelper = keyringHelper
+		credentials.CurrentHelperName = "Linux Keyring"
 	}
 }

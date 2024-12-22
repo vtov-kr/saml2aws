@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -87,7 +88,12 @@ func Login(loginFlags *flags.LoginExecFlags) error {
 		return errors.Wrap(err, "Error validating login details.")
 	}
 
+	ctx := context.Background()
+	ctx, canc := context.WithCancel(ctx)
+	defer canc()
+
 	var samlAssertion string
+
 	if account.SAMLCache {
 		if cacheProvider.IsValid() {
 			samlAssertion, err = cacheProvider.ReadRaw()
@@ -248,6 +254,11 @@ func resolveLoginDetails(account *cfg.IDPAccount, loginFlags *flags.LoginExecFla
 	// if you supply google_challenge in a flag it takes precedence
 	if len(loginFlags.GoogleChallenges) > 0 {
 		loginDetails.GoogleChallenges = loginFlags.GoogleChallenges
+	}
+
+	// if you supply auto_fill in a flag it takes precedence
+	if loginFlags.AutoFill {
+		loginDetails.AutoFill = loginFlags.AutoFill
 	}
 
 	// if you supply an mfa_ip_address in a flag or an IDP account it takes precedence
