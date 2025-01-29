@@ -5,7 +5,10 @@ import (
 	"log"
 	"sort"
 
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
+
+	"github.com/versent/saml2aws/v2/helper"
 	"github.com/versent/saml2aws/v2/helper/credentials"
 	"github.com/versent/saml2aws/v2/pkg/cfg"
 	"github.com/versent/saml2aws/v2/pkg/creds"
@@ -68,10 +71,12 @@ func PromptForLoginDetails(loginDetails *creds.LoginDetails, provider string) er
 		log.Println("To use saved password just hit enter.")
 	}
 
+	var Label = helper.ColorizeWithKey(color.FgYellow, color.Bold)
+
 	if loginDetails.Username == "" || !loginDetails.AutoFill {
 		loginDetails.Username = prompter.String("Username", loginDetails.Username)
 	} else {
-		log.Println("Using account:", loginDetails.Username)
+		log.Println(Label("Using account", loginDetails.Username))
 	}
 
 	if loginDetails.Password == "" || !loginDetails.AutoFill {
@@ -79,10 +84,11 @@ func PromptForLoginDetails(loginDetails *creds.LoginDetails, provider string) er
 			loginDetails.Password = enteredPassword
 		}
 	} else {
-		log.Printf("Using password: <from %s>", credentials.CurrentHelperName)
+		log.Println(Label("Using password", "<from %s>", credentials.CurrentHelperName))
 	}
+
 	if loginDetails.MFAToken != "" && loginDetails.AutoFill {
-		log.Println("Using MFA token:", loginDetails.MFAToken)
+		log.Println(Label("Using MFA token", loginDetails.MFAToken))
 	}
 
 	log.Println("")

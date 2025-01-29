@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
+	"github.com/versent/saml2aws/v2/helper"
 	"github.com/versent/saml2aws/v2/pkg/prompter"
 	ini "gopkg.in/ini.v1"
 )
@@ -72,37 +74,50 @@ type IDPAccount struct {
 }
 
 func (ia IDPAccount) String() string {
-	var appID string
-	var policyID string
-	var oktaCfg string
+	var (
+		appID    string
+		policyID string
+		oktaCfg  string
+	)
+
+	var Label = helper.ColorizeWithKey(color.FgYellow, color.Bold)
+	const indent = 2
+
 	switch ia.Provider {
 	case "OneLogin":
-		appID = fmt.Sprintf(`
-  AppID: %s
-  Subdomain: %s`, ia.AppID, ia.Subdomain)
+		appID = helper.IndentLines(indent, true, false,
+			Label("AppID", ia.AppID),
+			Label("Subdomain", ia.Subdomain),
+		)
 	case "F5APM":
-		policyID = fmt.Sprintf("\n  ResourceID: %s", ia.ResourceID)
+		policyID = helper.IndentLines(indent, true, false,
+			Label("ResourceID", ia.ResourceID),
+		)
 	case "AzureAD":
-		appID = fmt.Sprintf(`
-  AppID: %s`, ia.AppID)
+		appID = helper.IndentLines(indent, true, false,
+			Label("AppID", ia.AppID),
+		)
 	case "Okta":
-		oktaCfg = fmt.Sprintf(`
-  DisableSessions: %v
-  DisableRememberDevice: %v`, ia.DisableSessions, ia.DisableSessions)
+		oktaCfg = helper.IndentLines(indent, true, false,
+			Label("DisableSessions", "%v", ia.DisableSessions),
+			Label("DisableRememberDevice", "%v", ia.DisableRememberDevice),
+		)
 	}
 
-	return fmt.Sprintf(`account {%s%s%s
-  URL: %s
-  Username: %s
-  Provider: %s
-  MFA: %s
-  SkipVerify: %v
-  AmazonWebservicesURN: %s
-  SessionDuration: %d
-  Profile: %s
-  RoleARN: %s
-  Region: %s
-}`, appID, policyID, oktaCfg, ia.URL, ia.Username, ia.Provider, ia.MFA, ia.SkipVerify, ia.AmazonWebservicesURN, ia.SessionDuration, ia.Profile, ia.RoleARN, ia.Region)
+	return helper.IndentLines(indent, false, false,
+		fmt.Sprintf("account {%s%s%s", appID, policyID, oktaCfg),
+		Label("URL", ia.URL),
+		Label("Username", ia.Username),
+		Label("Provider", ia.Provider),
+		Label("MFA", ia.MFA),
+		Label("SkipVerify", "%v", ia.SkipVerify),
+		Label("AmazonWebservicesURN", ia.AmazonWebservicesURN),
+		Label("SessionDuration", "%d", ia.SessionDuration),
+		Label("Profile", ia.Profile),
+		Label("RoleARN", ia.RoleARN),
+		Label("Region", ia.Region),
+		"}",
+	)
 }
 
 // Validate validate the required / expected fields are set
