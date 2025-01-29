@@ -250,6 +250,11 @@ func resolveLoginDetails(account *cfg.IDPAccount, loginFlags *flags.LoginExecFla
 		loginDetails.GoogleChallenges = loginFlags.GoogleChallenges
 	}
 
+	// if you supply auto_fill in a flag it takes precedence
+	if loginFlags.AutoFill {
+		loginDetails.AutoFill = loginFlags.AutoFill
+	}
+
 	// if you supply an mfa_ip_address in a flag or an IDP account it takes precedence
 	if account.MFAIPAddress != "" {
 		loginDetails.MFAIPAddress = account.MFAIPAddress

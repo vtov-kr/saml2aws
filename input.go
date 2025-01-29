@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/pkg/errors"
+	"github.com/versent/saml2aws/v2/helper/credentials"
 	"github.com/versent/saml2aws/v2/pkg/cfg"
 	"github.com/versent/saml2aws/v2/pkg/creds"
 	"github.com/versent/saml2aws/v2/pkg/prompter"
@@ -61,13 +62,29 @@ func PromptForConfigurationDetails(idpAccount *cfg.IDPAccount) error {
 // PromptForLoginDetails prompt the user to present their username, password
 func PromptForLoginDetails(loginDetails *creds.LoginDetails, provider string) error {
 
-	log.Println("To use saved password just hit enter.")
+	var autoFill = loginDetails.AutoFill
 
-	loginDetails.Username = prompter.String("Username", loginDetails.Username)
-
-	if enteredPassword := prompter.Password("Password"); enteredPassword != "" {
-		loginDetails.Password = enteredPassword
+	if !autoFill {
+		log.Println("To use saved password just hit enter.")
 	}
+
+	if loginDetails.Username == "" || !loginDetails.AutoFill {
+		loginDetails.Username = prompter.String("Username", loginDetails.Username)
+	} else {
+		log.Println("Using account:", loginDetails.Username)
+	}
+
+	if loginDetails.Password == "" || !loginDetails.AutoFill {
+		if enteredPassword := prompter.Password("Password"); enteredPassword != "" {
+			loginDetails.Password = enteredPassword
+		}
+	} else {
+		log.Printf("Using password: <from %s>", credentials.CurrentHelperName)
+	}
+	if loginDetails.MFAToken != "" && loginDetails.AutoFill {
+		log.Println("Using MFA token:", loginDetails.MFAToken)
+	}
+
 	log.Println("")
 	if provider == "OneLogin" {
 		if loginDetails.ClientID == "" {

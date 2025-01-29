@@ -267,6 +267,7 @@ Commands:
         --force                    Refresh credentials even if not expired.
         --google-challenges=GOOGLE-CHALLENGES ...
                                    Specific to GoogleApps, a prioritized comma-separated list of challenge types used during login, attempted in the listed order.
+        --auto-fill                Skips manual input by auto-filling prompts from flags, config, env vars, and OS credential manager (e.g., macOS Keychain, Windows Credential Manager).
         --credential-process       Enables AWS Credential Process support by outputting credentials to STDOUT in a JSON message.
         --credentials-file=CREDENTIALS-FILE
                                    The file that will cache the credentials retrieved from AWS. When not specified, will use the default AWS credentials file location. (env: SAML2AWS_CREDENTIALS_FILE)
