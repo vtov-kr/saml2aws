@@ -83,6 +83,24 @@ func (_m *Helper) Get(serverURL string) (string, string, error) {
 	return r0, r1, r2
 }
 
+// Name provides a mock function with given fields:
+func (_m *Helper) Name() string {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Name")
+	}
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
 // SupportsCredentialStorage provides a mock function with given fields:
 func (_m *Helper) SupportsCredentialStorage() bool {
 	ret := _m.Called()

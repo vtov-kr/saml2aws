@@ -17,6 +17,10 @@ var logger = logrus.WithField("helper", "osxkeychain")
 // Osxkeychain handles secrets using the OS X Keychain as store.
 type Osxkeychain struct{}
 
+func (h Osxkeychain) Name() string {
+	return "macOS Keychain"
+}
+
 // Add adds new credentials to the keychain.
 func (h Osxkeychain) Add(creds *credentials.Credentials) error {
 	err := h.Delete(creds.ServerURL)

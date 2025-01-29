@@ -50,6 +50,7 @@ type LoginExecFlags struct {
 	ExecProfile       string
 	CredentialProcess bool
 	GoogleChallenges  []string
+	AutoFill          bool
 }
 
 type ConsoleFlags struct {

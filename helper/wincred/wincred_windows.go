@@ -33,6 +33,10 @@ import (
 // Wincred handles secrets using the Windows credential service.
 type Wincred struct{}
 
+func (Wincred) Name() string {
+	return "Windows Credential Manager"
+}
+
 // Add adds new credentials to the windows credentials manager.
 func (h Wincred) Add(creds *credentials.Credentials) error {
 	g := winc.NewGenericCredential(creds.ServerURL)

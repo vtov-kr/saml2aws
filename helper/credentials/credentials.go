@@ -35,6 +35,8 @@ type Helper interface {
 	Get(serverURL string) (string, string, error)
 	// SupportsCredentialStorage returns true or false if there is credential storage.
 	SupportsCredentialStorage() bool
+	// Name returns the name of the helper.
+	Name() string
 }
 
 // IsErrCredentialsNotFound returns true if the error
@@ -44,6 +46,10 @@ func IsErrCredentialsNotFound(err error) bool {
 }
 
 type defaultHelper struct{}
+
+func (defaultHelper) Name() string {
+	return "default"
+}
 
 func (defaultHelper) Add(*Credentials) error {
 	return nil

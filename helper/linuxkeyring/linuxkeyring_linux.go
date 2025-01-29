@@ -14,6 +14,10 @@ type KeyringHelper struct {
 	keyring keyring.Keyring
 }
 
+func (KeyringHelper) Name() string {
+	return "Linux Keyring"
+}
+
 type Configuration struct {
 	Backend string
 }
