@@ -265,8 +265,8 @@ Commands:
         --mfa-ip-address=MFA-IP-ADDRESS
                                    IP address whitelisting defined in OneLogin MFA policies. (env: ONELOGIN_MFA_IP_ADDRESS)
         --force                    Refresh credentials even if not expired.
-        --google-challenges=GOOGLE-CHALLENGES ...
-                                   Specific to GoogleApps, a prioritized comma-separated list of challenge types used during login, attempted in the listed order.
+        --google-challenge=GOOGLE-CHALLENGE ...
+                                   Specific to GoogleApps, a prioritized list of challenge types used during login. This flag can be specified multiple times to set the order of challenges (e.g., --google-challenge=totp --google-challenge=dp).
         --auto-fill                Skips manual input by auto-filling prompts from flags, config, env vars, and OS credential manager (e.g., macOS Keychain, Windows Credential Manager).
         --credential-process       Enables AWS Credential Process support by outputting credentials to STDOUT in a JSON message.
         --credentials-file=CREDENTIALS-FILE
